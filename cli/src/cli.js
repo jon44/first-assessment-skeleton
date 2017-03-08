@@ -7,6 +7,7 @@ export const cli = vorpal()
 
 let username
 let server
+let date
 
 cli
   .delimiter(cli.chalk['yellow']('ftd~$'))

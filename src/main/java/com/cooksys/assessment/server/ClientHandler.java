@@ -6,6 +6,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.HashMap;
 
@@ -37,10 +39,12 @@ public class ClientHandler implements Runnable {
 			String response;
 			String command;
 			String otherUser = "";
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
 
 			while (!socket.isClosed()) {
 				String raw = reader.readLine();
 				Message message = mapper.readValue(raw, Message.class);
+				message.setTimeStamp(LocalDateTime.now().format(formatter));
 				
 				command = message.getCommand();
 				if(command.startsWith("@")) {
@@ -74,6 +78,7 @@ public class ClientHandler implements Runnable {
 						}
 						break;
 					case "@":
+						log.info("user <{}> messaged <{}> to user <{}>", message.getUsername(), message.getContents(), otherUser);
 						response = mapper.writeValueAsString(message);
 						if(clientMap.containsKey(otherUser)) {
 							tempWriter = new PrintWriter(new OutputStreamWriter(clientMap.get(otherUser).getOutputStream()));
