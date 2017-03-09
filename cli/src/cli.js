@@ -49,7 +49,3 @@ cli
 
     callback()
   })
-
-const commands = () => {
-  
-}
