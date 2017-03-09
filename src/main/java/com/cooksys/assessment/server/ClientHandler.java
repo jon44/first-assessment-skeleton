@@ -40,7 +40,7 @@ public class ClientHandler implements Runnable {
 			String command;
 			String otherUser = "";
 			String users = "";
-			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
 			while (!socket.isClosed()) {
 				Collection<Socket> allSocks;
@@ -109,9 +109,16 @@ public class ClientHandler implements Runnable {
 					case "@":
 						log.info("user <{}> messaged <{}> to user <{}>", message.getUsername(), message.getContents(), otherUser);
 						message.setCommand("@");
-						response = mapper.writeValueAsString(message);
 						if(clientMap.containsKey(otherUser)) {
+							response = mapper.writeValueAsString(message);
 							tempWriter = new PrintWriter(new OutputStreamWriter(clientMap.get(otherUser).getOutputStream()));
+							tempWriter.write(response);
+							tempWriter.flush();
+						} else {
+							message.setCommand("!@");
+							message.setContents("this user does not exist");
+							response = mapper.writeValueAsString(message);
+							tempWriter = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
 							tempWriter.write(response);
 							tempWriter.flush();
 						}
