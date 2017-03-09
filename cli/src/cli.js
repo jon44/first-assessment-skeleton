@@ -7,6 +7,8 @@ export const cli = vorpal()
 
 let username
 let server
+let lastCommand = 'empty'
+let includeCommand = false
 
 cli
   .delimiter(cli.chalk['yellow']('ftd~$'))
@@ -30,8 +32,9 @@ cli
     })
   })
   .action(function (input, callback) {
-    const [ command, ...rest ] = words(input, /[^, ]+/g)
-    const contents = rest.join(' ')
+    const [ newCommand, ...rest ] = words(input, /[^, ]+/g)
+    const command = getCommand(newCommand)
+    const contents = getContents(rest, newCommand).join(' ')
 
     if (command === 'disconnect') {
       server.end(new Message({ username, command }).toJSON() + '\n')
@@ -49,3 +52,32 @@ cli
 
     callback()
   })
+
+function getCommand (command) {
+  if (command === 'connect' ||
+     command === 'disconnect' ||
+     command === 'echo' ||
+     command === 'broadcast' ||
+     command[0] === '@' ||
+     command === 'users') {
+    lastCommand = command
+    includeCommand = false
+    return command
+  } else if (lastCommand === 'empty') {
+    return command
+  } else {
+    includeCommand = true
+    return lastCommand
+  }
+}
+
+function getContents (rest, command) {
+  console.log('getContents: ' + rest + '----' + command)
+  if (includeCommand) {
+    console.log('includeCommand is true: ' + [command, ...rest])
+    return [command, ...rest]
+  } else {
+    console.log('includeCommand is not true: ' + rest)
+    return rest
+  }
+}
