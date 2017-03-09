@@ -29,21 +29,46 @@ public class ClientHandler implements Runnable {
 		this.socket = socket;
 		this.clientMap = clientMap;
 	}
+	
+	public void toAll(String response) {
+		Collection<Socket> allSocks = clientMap.values();
+		PrintWriter writer;
+
+		try {
+			for(Socket s : allSocks) {
+				writer = new PrintWriter(new OutputStreamWriter(s.getOutputStream()));
+				writer.write(response);
+				writer.flush();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void toOne(String response, Socket socket) {
+		PrintWriter writer;
+		
+		try {
+			writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+			writer.write(response);
+			writer.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	public void run() {
 		try {
 
 			ObjectMapper mapper = new ObjectMapper();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-			PrintWriter tempWriter;
 			String response;
 			String command;
 			String otherUser = "";
 			String users = "";
-			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm:ss a");
 
 			while (!socket.isClosed()) {
-				Collection<Socket> allSocks;
 				Set<String> allUsers;
 				String raw = reader.readLine();
 				Message message = mapper.readValue(raw, Message.class);
@@ -61,19 +86,12 @@ public class ClientHandler implements Runnable {
 							message.setCommand("fail");
 							message.setContents("username \"" + message.getUsername() + "\" is already taken");
 							response = mapper.writeValueAsString(message);
-							tempWriter = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
-							tempWriter.write(response);
-							tempWriter.flush();
+							this.toOne(response, this.socket);
 							this.socket.close();
 						} else {
 							log.info("user <{}> connected", message.getUsername());
 							response = mapper.writeValueAsString(message);
-							allSocks = clientMap.values();
-							for(Socket i : allSocks) {
-								tempWriter = new PrintWriter(new OutputStreamWriter(i.getOutputStream()));
-								tempWriter.write(response);
-								tempWriter.flush();
-							}
+							this.toAll(response);
 							clientMap.put(message.getUsername(), socket);
 						}
 						break;
@@ -81,46 +99,30 @@ public class ClientHandler implements Runnable {
 						log.info("user <{}> disconnected", message.getUsername());
 						response = mapper.writeValueAsString(message);
 						clientMap.remove(message.getUsername());
-						allSocks = clientMap.values();
-						for(Socket i : allSocks) {
-							tempWriter = new PrintWriter(new OutputStreamWriter(i.getOutputStream()));
-							tempWriter.write(response);
-							tempWriter.flush();
-						}
+						this.toAll(response);
 						this.socket.close();
 						break;
 					case "echo":
 						log.info("user <{}> echoed message <{}>", message.getUsername(), message.getContents());
 						response = mapper.writeValueAsString(message);
-						tempWriter = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
-						tempWriter.write(response);
-						tempWriter.flush();
+						this.toOne(response, this.socket);
 						break;
 					case "broadcast":
 						log.info("user <{}> broadcast message <{}>", message.getUsername(), message.getContents());
 						response = mapper.writeValueAsString(message);
-						allSocks = clientMap.values();
-						for(Socket i : allSocks) {
-							tempWriter = new PrintWriter(new OutputStreamWriter(i.getOutputStream()));
-							tempWriter.write(response);
-							tempWriter.flush();
-						}
+						this.toAll(response);
 						break;
 					case "@":
 						log.info("user <{}> messaged <{}> to user <{}>", message.getUsername(), message.getContents(), otherUser);
 						message.setCommand("@");
 						if(clientMap.containsKey(otherUser)) {
 							response = mapper.writeValueAsString(message);
-							tempWriter = new PrintWriter(new OutputStreamWriter(clientMap.get(otherUser).getOutputStream()));
-							tempWriter.write(response);
-							tempWriter.flush();
+							this.toOne(response, clientMap.get(otherUser));
 						} else {
 							message.setCommand("!@");
 							message.setContents("this user does not exist");
 							response = mapper.writeValueAsString(message);
-							tempWriter = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
-							tempWriter.write(response);
-							tempWriter.flush();
+							this.toOne(response, this.socket);
 						}
 						break;
 					case "users":
@@ -136,9 +138,7 @@ public class ClientHandler implements Runnable {
 						}
 						message.setContents(users);
 						response = mapper.writeValueAsString(message);
-						tempWriter = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
-						tempWriter.write(response);
-						tempWriter.flush();
+						this.toOne(response, this.socket);
 						break;
 				}
 			}
