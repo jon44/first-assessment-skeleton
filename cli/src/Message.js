@@ -20,6 +20,18 @@ export class Message {
   }
 
   toString () {
-    return this.contents
+    if (this.command === 'echo') {
+      return 'echo:\n' + this.timestamp + ' ' + this.username + ' (echo) ' + this.contents
+    } else if (this.command === 'broadcast') {
+      return 'broadcast:\n' + this.timestamp + ' ' + this.username + ' (all) ' + this.contents
+    } else if (this.command === '@') {
+      return 'direct message:\n' + this.timestamp + ' ' + this.username + ' (whipser) ' + this.contents
+    } else if (this.command === 'connect') {
+      return 'connection alert:\n' + this.timestamp + ' ' + this.username + ' has connected'
+    } else if (this.command === 'disconnect') {
+      return 'connection alert:\n' + this.timestamp + ' ' + this.username + ' has disconnected'
+    } else if (this.command === 'users') {
+
+    }
   }
 }

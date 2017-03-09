@@ -7,7 +7,6 @@ export const cli = vorpal()
 
 let username
 let server
-let date
 
 cli
   .delimiter(cli.chalk['yellow']('ftd~$'))
@@ -33,11 +32,12 @@ cli
   .action(function (input, callback) {
     const [ command, ...rest ] = words(input, /[^, ]+/g)
     const contents = rest.join(' ')
+    const timestamp = '12:00'
 
     if (command === 'disconnect') {
       server.end(new Message({ username, command }).toJSON() + '\n')
     } else if (command === 'echo') {
-      server.write(new Message({ username, command, contents }).toJSON() + '\n')
+      server.write(new Message({ username, command, contents, timestamp }).toJSON() + '\n')
     } else if (command === 'broadcast') {
       server.write(new Message({ username, command, contents }).toJSON() + '\n')
     } else if (command[0] === '@') {

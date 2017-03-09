@@ -42,9 +42,11 @@ public class ClientHandler implements Runnable {
 			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
 
 			while (!socket.isClosed()) {
+				Collection<Socket> allSocks;
 				String raw = reader.readLine();
 				Message message = mapper.readValue(raw, Message.class);
-				message.setTimeStamp(LocalDateTime.now().format(formatter));
+				System.out.println(message.getTimestamp());
+				message.setTimestamp(LocalDateTime.now().format(formatter));
 				
 				command = message.getCommand();
 				if(command.startsWith("@")) {
@@ -54,11 +56,26 @@ public class ClientHandler implements Runnable {
 				
 				switch (command) {
 					case "connect":
-						clientMap.put(message.getUsername(), socket);
 						log.info("user <{}> connected", message.getUsername());
+						response = mapper.writeValueAsString(message);
+						allSocks = clientMap.values();
+						for(Socket i : allSocks) {
+							tempWriter = new PrintWriter(new OutputStreamWriter(i.getOutputStream()));
+							tempWriter.write(response);
+							tempWriter.flush();
+						}
+						clientMap.put(message.getUsername(), socket);
 						break;
 					case "disconnect":
 						log.info("user <{}> disconnected", message.getUsername());
+						response = mapper.writeValueAsString(message);
+						clientMap.remove(message.getUsername());
+						allSocks = clientMap.values();
+						for(Socket i : allSocks) {
+							tempWriter = new PrintWriter(new OutputStreamWriter(i.getOutputStream()));
+							tempWriter.write(response);
+							tempWriter.flush();
+						}
 						this.socket.close();
 						break;
 					case "echo":
@@ -70,7 +87,7 @@ public class ClientHandler implements Runnable {
 					case "broadcast":
 						log.info("user <{}> broadcast message <{}>", message.getUsername(), message.getContents());
 						response = mapper.writeValueAsString(message);
-						Collection<Socket> allSocks = clientMap.values();
+						allSocks = clientMap.values();
 						for(Socket i : allSocks) {
 							tempWriter = new PrintWriter(new OutputStreamWriter(i.getOutputStream()));
 							tempWriter.write(response);
@@ -79,6 +96,7 @@ public class ClientHandler implements Runnable {
 						break;
 					case "@":
 						log.info("user <{}> messaged <{}> to user <{}>", message.getUsername(), message.getContents(), otherUser);
+						message.setCommand("@");
 						response = mapper.writeValueAsString(message);
 						if(clientMap.containsKey(otherUser)) {
 							tempWriter = new PrintWriter(new OutputStreamWriter(clientMap.get(otherUser).getOutputStream()));
