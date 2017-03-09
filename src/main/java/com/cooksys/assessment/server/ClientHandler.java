@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,18 +35,18 @@ public class ClientHandler implements Runnable {
 
 			ObjectMapper mapper = new ObjectMapper();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-			PrintWriter writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
 			PrintWriter tempWriter;
 			String response;
 			String command;
 			String otherUser = "";
+			String users = "";
 			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
 
 			while (!socket.isClosed()) {
 				Collection<Socket> allSocks;
+				Set<String> allUsers;
 				String raw = reader.readLine();
 				Message message = mapper.readValue(raw, Message.class);
-				System.out.println(message.getTimestamp());
 				message.setTimestamp(LocalDateTime.now().format(formatter));
 				
 				command = message.getCommand();
@@ -81,8 +82,9 @@ public class ClientHandler implements Runnable {
 					case "echo":
 						log.info("user <{}> echoed message <{}>", message.getUsername(), message.getContents());
 						response = mapper.writeValueAsString(message);
-						writer.write(response);
-						writer.flush();
+						tempWriter = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+						tempWriter.write(response);
+						tempWriter.flush();
 						break;
 					case "broadcast":
 						log.info("user <{}> broadcast message <{}>", message.getUsername(), message.getContents());
@@ -103,6 +105,24 @@ public class ClientHandler implements Runnable {
 							tempWriter.write(response);
 							tempWriter.flush();
 						}
+						break;
+					case "users":
+						log.info("user <{}> requested users", message.getUsername());
+						allUsers = clientMap.keySet();
+						users = "";
+						for(String i : allUsers) {
+							if(users.equals("")) {
+								System.out.println("in here");
+								users = i;
+							} else {
+								users = i + "\n" + users;
+							}
+						}
+						message.setContents(users);
+						response = mapper.writeValueAsString(message);
+						tempWriter = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+						tempWriter.write(response);
+						tempWriter.flush();
 						break;
 				}
 			}

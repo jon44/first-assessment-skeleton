@@ -27,11 +27,11 @@ export class Message {
     } else if (this.command === '@') {
       return 'direct message:\n' + this.timestamp + ' ' + this.username + ' (whipser) ' + this.contents
     } else if (this.command === 'connect') {
-      return 'connection alert:\n' + this.timestamp + ' ' + this.username + ' has connected'
+      return 'connection alert:\n' + this.timestamp + ': ' + this.username + ' has connected'
     } else if (this.command === 'disconnect') {
-      return 'connection alert:\n' + this.timestamp + ' ' + this.username + ' has disconnected'
+      return 'connection alert:\n' + this.timestamp + ': ' + this.username + ' has disconnected'
     } else if (this.command === 'users') {
-
+      return 'users\n' + this.timestamp + ': currently connected users:\n' + this.contents
     }
   }
 }
