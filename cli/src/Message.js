@@ -33,6 +33,8 @@ export class Message {
       return chalk.magenta('connection alert:\n' + this.timestamp + ': ' + this.username + ' has disconnected')
     } else if (this.command === 'users') {
       return chalk.gray('users\n' + this.timestamp + ': currently connected users:\n' + this.contents)
+    } else if (this.command === 'fail') {
+      return this.contents
     }
   }
 }

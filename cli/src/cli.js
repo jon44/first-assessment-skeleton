@@ -7,6 +7,8 @@ export const cli = vorpal()
 
 let username
 let server
+let host = 'localhost'
+let port = 8080
 let lastCommand = 'empty'
 let includeCommand = false
 
@@ -14,11 +16,13 @@ cli
   .delimiter(cli.chalk['yellow']('ftd~$'))
 
 cli
-  .mode('connect <username>')
+  .mode('connect <username> [hostname] [portnum]')
   .delimiter(cli.chalk['green']('connected>'))
   .init(function (args, callback) {
     username = args.username
-    server = connect({ host: 'localhost', port: 8080 }, () => {
+    if (args.hostname) { host = args.hostname }
+    if (args.portnum) { port = args.portnum }
+    server = connect({ host: host, port: port }, () => {
       server.write(new Message({ username, command: 'connect' }).toJSON() + '\n')
       callback()
     })
@@ -72,12 +76,9 @@ function getCommand (command) {
 }
 
 function getContents (rest, command) {
-  console.log('getContents: ' + rest + '----' + command)
   if (includeCommand) {
-    console.log('includeCommand is true: ' + [command, ...rest])
     return [command, ...rest]
   } else {
-    console.log('includeCommand is not true: ' + rest)
     return rest
   }
 }

@@ -57,15 +57,25 @@ public class ClientHandler implements Runnable {
 				
 				switch (command) {
 					case "connect":
-						log.info("user <{}> connected", message.getUsername());
-						response = mapper.writeValueAsString(message);
-						allSocks = clientMap.values();
-						for(Socket i : allSocks) {
-							tempWriter = new PrintWriter(new OutputStreamWriter(i.getOutputStream()));
+						if(clientMap.containsKey(message.getUsername())) {
+							message.setCommand("fail");
+							message.setContents("username \"" + message.getUsername() + "\" is already taken");
+							response = mapper.writeValueAsString(message);
+							tempWriter = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
 							tempWriter.write(response);
 							tempWriter.flush();
+							this.socket.close();
+						} else {
+							log.info("user <{}> connected", message.getUsername());
+							response = mapper.writeValueAsString(message);
+							allSocks = clientMap.values();
+							for(Socket i : allSocks) {
+								tempWriter = new PrintWriter(new OutputStreamWriter(i.getOutputStream()));
+								tempWriter.write(response);
+								tempWriter.flush();
+							}
+							clientMap.put(message.getUsername(), socket);
 						}
-						clientMap.put(message.getUsername(), socket);
 						break;
 					case "disconnect":
 						log.info("user <{}> disconnected", message.getUsername());
@@ -112,7 +122,6 @@ public class ClientHandler implements Runnable {
 						users = "";
 						for(String i : allUsers) {
 							if(users.equals("")) {
-								System.out.println("in here");
 								users = i;
 							} else {
 								users = i + "\n" + users;
