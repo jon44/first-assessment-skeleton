@@ -28,11 +28,11 @@ export class Message {
     } else if (this.command === '@') {
       return chalk.magenta('direct message:\n' + this.timestamp + ' ' + this.username + ' (whipser) ' + this.contents)
     } else if (this.command === 'connect') {
-      return chalk.gray('connection alert:\n' + this.timestamp + ': ' + this.username + ' has connected')
+      return chalk.green.bold('connection alert:\n' + this.timestamp + ': ' + this.username + ' has connected')
     } else if (this.command === 'disconnect') {
       return chalk.gray('connection alert:\n' + this.timestamp + ': ' + this.username + ' has disconnected')
     } else if (this.command === 'users') {
-      return chalk.yellow.dim('users\n' + this.timestamp + ': currently connected users:\n' + this.contents)
+      return chalk.yellow.dim('users:\n' + this.timestamp + ': currently connected users:\n' + this.contents)
     } else if (this.command === '!@') {
       return this.contents
     } else if (this.command === 'fail') {

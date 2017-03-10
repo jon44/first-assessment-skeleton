@@ -147,6 +147,7 @@ public class ClientHandler implements Runnable {
 			}
 
 		} catch (IOException e) {
+			//if user loses connection - remove user from map and notify all clients
 			clientMap.remove(this.username);
 			Message message = new Message();
 			message.setCommand("disconnect");
