@@ -16,12 +16,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cooksys.assessment.model.Message;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ClientHandler implements Runnable {
 	private Logger log = LoggerFactory.getLogger(ClientHandler.class);
 
 	private Socket socket;
+	private String username;
 	private HashMap<String, Socket> clientMap;
 
 	public ClientHandler(Socket socket, HashMap<String, Socket> clientMap) {
@@ -68,7 +70,7 @@ public class ClientHandler implements Runnable {
 			String users = "";
 			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm:ss a");
 
-			while (!socket.isClosed()) {
+			while (!socket.isClosed()) {				
 				Set<String> allUsers;
 				String raw = reader.readLine();
 				Message message = mapper.readValue(raw, Message.class);
@@ -90,6 +92,7 @@ public class ClientHandler implements Runnable {
 							this.socket.close();
 						} else {
 							log.info("user <{}> connected", message.getUsername());
+							username = message.getUsername();
 							response = mapper.writeValueAsString(message);
 							this.toAll(response);
 							clientMap.put(message.getUsername(), socket);
@@ -144,6 +147,22 @@ public class ClientHandler implements Runnable {
 			}
 
 		} catch (IOException e) {
+			clientMap.remove(this.username);
+			Message message = new Message();
+			message.setCommand("disconnect");
+			message.setUsername(this.username);
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm:ss a");
+			message.setTimestamp(LocalDateTime.now().format(formatter));
+			ObjectMapper mapper = new ObjectMapper();
+			
+			try {
+				String response = mapper.writeValueAsString(message);
+				this.toAll(response);
+				
+			} catch (JsonProcessingException e1) {
+				e1.printStackTrace();
+			}
+			
 			log.error("Something went wrong :/", e);
 		}
 	}
